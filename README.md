@@ -21,7 +21,7 @@ GitHub Pages で公開する小さな Web ツール置き場です。
 ## 注意
 
 - リポジトリは Public です。秘密情報や社外に出せない内容は置かないでください。
-- 有償フォントのファイルはライセンス上ここに置かないでください。`font-preview` は利用者のブラウザ内でフォントファイルを読み込む方式です。
+- 有償フォントのファイルはライセンス上ここに置かないでください。`font-preview` は Adobe Fonts の配信か、利用者の Mac にインストール済みのフォントを使います。
 
 ## font-preview (書体プレビュー)
 
@@ -30,9 +30,8 @@ GitHub Pages で公開する小さな Web ツール置き場です。
 
 ### フォントの探し方 (優先順)
 
-1. 各書体の「使用フォント」欄に入力したフォント名 (ブラウザの localStorage に保存)
-2. Adobe Fonts の Web プロジェクトのフォント (`STYLES[].adobe` に CSS 用の font-family 名などを書く)
-3. Mac にインストール済みのフォント (`STYLES[].candidates`)
+1. Adobe Fonts の Web プロジェクトのフォント (`STYLES[].adobe` に CSS 用の font-family 名などを書く)
+2. Mac にインストール済みのフォント (`STYLES[].candidates`)
 
 インストール済みフォントは `@font-face` の `local()` で照合します。Chrome では英語のフルネームか PostScript 名でないと一致しません (例: `YuKyokasho Medium`)。
 

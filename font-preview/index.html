@@ -67,15 +67,7 @@
   .badge { font-size: 11px; padding: 2px 8px; border-radius: 999px; border: 1px solid; white-space: nowrap; }
   .badge.local { color: var(--ok); border-color: var(--ok); }
   .badge.adobe { color: #b3000f; border-color: #b3000f; }
-  .badge.upload { color: #2346a0; border-color: #2346a0; }
   .badge.missing { color: var(--ng); border-color: var(--ng); }
-  .font-row {
-    display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
-    padding: 8px 16px; border-bottom: 1px solid var(--line); font-size: 12px; color: var(--muted);
-  }
-  .font-row input[type="text"] { font-size: 13px; padding: 5px 8px; min-width: 240px; }
-  .upload-btn { font-size: 12px; color: var(--accent); cursor: pointer; text-decoration: underline; }
-  .upload-btn input { display: none; }
   .meta a { color: var(--accent); }
   .preview {
     padding: 20px 16px;
@@ -93,7 +85,6 @@
   .notice.warn { color: var(--warn); padding: 8px 16px 0; font-size: 13px; }
   .card.is-missing .preview { display: none; }
   .card:not(.is-missing) .notice.missing { display: none; }
-  footer { padding: 0 24px 32px; font-size: 12px; color: var(--muted); line-height: 1.7; }
   .btn {
     border: 1px solid var(--line); background: #fff; color: var(--ink);
     padding: 5px 12px; font-size: 13px; border-radius: 6px; cursor: pointer;
@@ -106,7 +97,7 @@
   @media print {
     @page { margin: 12mm; }
     body { background: #fff; }
-    header, .controls, footer, .meta, .font-row, .notice { display: none !important; }
+    header, .controls, .meta, .notice { display: none !important; }
     main { padding: 0; gap: 10mm; }
     .card { border: 0; break-inside: avoid; background: #fff; }
     .card.is-missing { display: none; }
@@ -145,16 +136,6 @@
 
 <main id="list"></main>
 
-<datalist id="installedFonts"></datalist>
-
-<footer>
-  この Mac にインストールされている正式なフォントだけで表示します。代替フォントは使いません。
-  フォントが見つからない書体は表示せず「未インストール」と表示します。
-  各書体の「使用フォント」にフォント名を入力するか、「フォントファイルを読み込む」でファイルを指定してください。
-  フォント名は英語のフルネームか PostScript 名で入力します (例: YuKyokasho Medium)。日本語名では見つかりません。Mac の「Font Book」でフォントを選び、情報表示で確認できます。
-  入力したフォント名はこのブラウザに保存されます。フォントファイルは送信されず、ブラウザ内でのみ使われます。
-</footer>
-
 <script>
   // 正式なフォントの候補。@font-face の local() で照合する。
   // Chrome は英語のフルネームか PostScript 名でしか照合しない (日本語名は一致しない) ため、英語名を先に書く。
@@ -180,14 +161,6 @@
   const $ = (s) => document.querySelector(s);
   const list = $("#list");
   const quote = (f) => `"${f.replace(/"/g, '\\"')}"`;
-  const storeKey = (id) => `font-preview:${id}`;
-
-  function loadSaved(id) {
-    try { return localStorage.getItem(storeKey(id)) || ""; } catch { return ""; }
-  }
-  function saveName(id, name) {
-    try { name ? localStorage.setItem(storeKey(id), name) : localStorage.removeItem(storeKey(id)); } catch {}
-  }
 
   // local() で指定名のフォントを読み込めたら、その書体専用の別名で登録する
   async function tryLocal(alias, name) {
@@ -216,25 +189,20 @@
     s.ready = false;
     s.url = "";
     const alias = `fp-${s.id}-${Date.now()}`;
-    if (s.upload) {
-      s.alias = s.upload.alias; s.kind = "upload"; s.label = s.upload.file;
-    } else {
-      s.kind = "missing"; s.label = s.custom || "";
-      // 優先順: 入力したフォント名 → Adobe Fonts → インストール済みフォント
-      const tries = [
-        ...(s.custom ? [["web", s.custom], ["local", s.custom]] : []),
-        ...s.adobe.map((f) => ["web", f.family, f]),
-        ...s.candidates.map((n) => ["local", n]),
-      ];
-      for (const [type, n, info] of tries) {
-        if (type === "web" && await tryWeb(n)) {
-          s.alias = n; s.kind = "adobe"; s.label = info ? info.name : n; s.url = info ? info.url : "";
-          break;
-        }
-        if (type === "local" && await tryLocal(alias, n)) {
-          s.alias = alias; s.kind = "local"; s.label = n;
-          break;
-        }
+    s.kind = "missing"; s.label = "";
+    // 優先順: Adobe Fonts → インストール済みフォント
+    const tries = [
+      ...s.adobe.map((f) => ["web", f.family, f]),
+      ...s.candidates.map((n) => ["local", n]),
+    ];
+    for (const [type, n, info] of tries) {
+      if (type === "web" && await tryWeb(n)) {
+        s.alias = n; s.kind = "adobe"; s.label = info.name; s.url = info.url;
+        break;
+      }
+      if (type === "local" && await tryLocal(alias, n)) {
+        s.alias = alias; s.kind = "local"; s.label = n;
+        break;
       }
     }
     applyFont(s);
@@ -247,7 +215,7 @@
   document.body.appendChild(sampler);
   const sampleText = () => $("#text").value || " ";
   function updateSampler() {
-    const names = new Set(STYLES.flatMap((s) => [...s.adobe.map((f) => f.family), s.custom].filter(Boolean)));
+    const names = new Set(STYLES.flatMap((s) => s.adobe.map((f) => f.family)));
     sampler.innerHTML = "";
     for (const n of names) {
       const span = document.createElement("span");
@@ -281,7 +249,7 @@
     const fontLabel = s.card.querySelector("[data-font]");
     const preview = s.card.querySelector("[data-preview]");
     const missingNote = s.card.querySelector(".notice.missing");
-    const texts = { local: "インストール済み", adobe: "Adobe Fonts", upload: "ファイルから読み込み", missing: "未インストール" };
+    const texts = { local: "インストール済み", adobe: "Adobe Fonts", missing: "未インストール" };
     badge.className = `badge ${s.kind}`;
     badge.textContent = texts[s.kind];
     fontLabel.textContent = "";
@@ -298,10 +266,8 @@
     s.card.classList.toggle("is-missing", s.kind === "missing");
     s.card.querySelectorAll("[data-save],[data-print]").forEach((b) => (b.disabled = s.kind === "missing"));
     if (s.kind === "missing") {
-      const tried = [s.custom, ...s.adobe.map((f) => f.name), ...s.candidates].filter(Boolean).join("、");
-      missingNote.textContent = tried
-        ? `正式なフォントがこの Mac に見つからないため表示できません (確認したフォント名: ${tried})。`
-        : "使用するフォントが未指定です。「使用フォント」にフォント名を入力してください。";
+      const tried = [...s.adobe.map((f) => f.name), ...s.candidates].join("、");
+      missingNote.textContent = `正式なフォントが見つからないため表示できません (確認したフォント名: ${tried})。`;
       preview.style.fontFamily = "";
     } else {
       // 代替フォントに落ちないよう、フォールバックは指定しない
@@ -336,7 +302,6 @@
   function render() {
     list.innerHTML = "";
     for (const s of STYLES) {
-      s.custom = loadSaved(s.id);
       const card = document.createElement("section");
       card.className = "card";
       card.innerHTML = `
@@ -349,29 +314,9 @@
             <button type="button" class="btn" data-print>印刷</button>
           </div>
         </div>
-        <div class="font-row">
-          使用フォント
-          <input type="text" list="installedFonts" placeholder="フォント名を入力 (英語名)${s.candidates[0] ? ` 例: ${s.candidates[0]}` : ""}" data-name>
-          <button type="button" class="btn" data-apply>適用</button>
-          <label class="upload-btn">フォントファイルを読み込む
-            <input type="file" accept=".ttf,.otf,.ttc,.woff,.woff2">
-          </label>
-        </div>
         <div class="notice missing"></div>
         <div class="notice warn"></div>
         <div class="preview" data-preview></div>`;
-      const nameInput = card.querySelector("[data-name]");
-      nameInput.value = s.custom;
-      const apply = () => {
-        s.custom = nameInput.value.trim();
-        s.upload = null;
-        saveName(s.id, s.custom);
-        updateSampler();
-        resolveFont(s);
-      };
-      card.querySelector("[data-apply]").addEventListener("click", apply);
-      nameInput.addEventListener("keydown", (e) => { if (e.key === "Enter") apply(); });
-      card.querySelector("input[type=file]").addEventListener("change", (e) => loadFile(s, e.target.files[0]));
       card.querySelector("[data-save]").addEventListener("click", () => saveImage(s));
       card.querySelector("[data-print]").addEventListener("click", () => printOne(card));
       s.card = card;
@@ -379,21 +324,6 @@
       resolveFont(s);
     }
     update();
-  }
-
-  async function loadFile(s, file) {
-    if (!file) return;
-    const alias = `fp-upload-${s.id}-${Date.now()}`;
-    try {
-      const face = new FontFace(alias, await file.arrayBuffer());
-      await face.load();
-      document.fonts.add(face);
-      s.upload = { alias, file: file.name };
-      resolveFont(s);
-    } catch {
-      const warn = s.card.querySelector(".notice.warn");
-      warn.textContent = `フォントファイルを読み込めませんでした: ${file.name}`;
-    }
   }
 
   function update() {
@@ -407,23 +337,6 @@
       checkGlyphs(s);
     }
   }
-
-  // Chrome 系ではインストール済みフォントの一覧を候補として出せる (初回のみ許可を求められる)
-  async function fillInstalledFonts() {
-    if (!("queryLocalFonts" in window)) return;
-    try {
-      const fonts = await window.queryLocalFonts();
-      const dl = $("#installedFonts");
-      const names = [...new Set(fonts.map((f) => f.fullName))].sort((a, b) => a.localeCompare(b, "ja"));
-      dl.innerHTML = names.map((n) => `<option value="${n.replace(/"/g, "&quot;")}"></option>`).join("");
-    } catch {}
-  }
-  document.addEventListener("focusin", (e) => {
-    if (e.target.matches("[data-name]") && !fillInstalledFonts.done) {
-      fillInstalledFonts.done = true;
-      fillInstalledFonts();
-    }
-  });
 
   // 表示中の文字を、そのカードの書体・サイズ・組方向で PNG に描画して保存する
   async function saveImage(s) {
@@ -500,7 +413,6 @@
   // Adobe Fonts の字形が後から届いたら、欠けている文字の判定をやり直す
   document.fonts.addEventListener("loadingdone", () => STYLES.forEach((s) => s.card && checkGlyphs(s)));
 
-  STYLES.forEach((s) => (s.custom = loadSaved(s.id)));
   updateSampler();
   render();
   loadAdobeFonts();
