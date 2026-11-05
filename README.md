@@ -36,17 +36,17 @@ GitHub Pages で公開する小さな Web ツール置き場です。
 
 インストール済みフォントは `@font-face` の `local()` で照合します。Chrome では英語のフルネームか PostScript 名でないと一致しません (例: `YuKyokasho Medium`)。
 
-### Adobe Fonts を使う (作業途中)
+### Adobe Fonts
 
-Adobe Fonts の日本語フォントは、ページ上の文字だけを配信する方式のため JavaScript の埋め込みコードを使います。
+Adobe Fonts の日本語フォントは、ページ上の文字だけを配信する方式のため JavaScript の埋め込みコードを使います。Web プロジェクト ID は `font-preview/index.html` の `ADOBE_FONTS_PROJECT_ID` (`zwp6jxa`) です。
 
-1. fonts.adobe.com で Web プロジェクトを作り、次のフォントを追加する。
-   - 行書体: AB-香蘭行書
-   - 江戸文字: AB-渡月勘亭流
-   - 千社文字: VDL 京千社 (提供が続いているか要確認)
-   - 寄席文字: Adobe Fonts には見当たらない (別途用意が必要)
-2. `font-preview/index.html` の `ADOBE_FONTS_PROJECT_ID` に、埋め込みコード `https://use.typekit.net/<ID>.js` の `<ID>` を書く。
-3. `STYLES` の各書体の `adobe` に、Web プロジェクトに表示される CSS 用の font-family 名を書く。
-4. ページを開き、各書体のバッジが「Adobe Fonts」になることを確認する。
+| 書体 | Adobe Fonts のフォント | `STYLES[].adobe` |
+| --- | --- | --- |
+| 行書体 | AB-香蘭行書 | `ab-kouran-gyosho` |
+| 千社文字 | VDL 京千社 | `vdl-kyosensya` |
+| 江戸文字 | AB-渡月勘亭流 | `ab-togetsukanteiryu` |
+| 寄席文字 | なし (別途用意が必要) | - |
+
+書体を追加するときは、fonts.adobe.com の Web プロジェクトにフォントを追加し、表示される CSS 用の font-family 名を `STYLES[].adobe` に書きます。
 
 社内プロキシ配下では Adobe Fonts の配信 (`use.typekit.net` など) が読み込めない可能性があります。確認はプロキシ配下ではない回線で行ってください。

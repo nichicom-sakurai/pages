@@ -161,15 +161,15 @@
   // adobe には Adobe Fonts の Web プロジェクトに表示される CSS 用のフォント名 (font-family) を書く。
   // Adobe Fonts が使える書体は、インストール済みフォントより優先する。
   const STYLES = [
-    { id: "gyosho", name: "行書体", adobe: [], candidates: ["HakusyuGyosyo", "HGGyoshotai", "HGPGyoshotai", "白舟行書", "HG行書体"] },
-    { id: "senja", name: "千社文字", adobe: [], candidates: ["HakusyuSenja", "白舟千社"] },
-    { id: "edo", name: "江戸文字", adobe: [], candidates: ["HakusyuKanteiryu", "白舟勘亭流"] },
+    { id: "gyosho", name: "行書体", adobe: ["ab-kouran-gyosho"], candidates: ["HakusyuGyosyo", "HGGyoshotai", "HGPGyoshotai", "白舟行書", "HG行書体"] },
+    { id: "senja", name: "千社文字", adobe: ["vdl-kyosensya"], candidates: ["HakusyuSenja", "白舟千社"] },
+    { id: "edo", name: "江戸文字", adobe: ["ab-togetsukanteiryu"], candidates: ["HakusyuKanteiryu", "白舟勘亭流"] },
     { id: "yose", name: "寄席文字", adobe: [], candidates: ["HakusyuYose", "白舟寄席"] },
   ];
 
   // Adobe Fonts の Web プロジェクト ID (埋め込みコード https://use.typekit.net/<ID>.js の <ID> 部分)。
   // 日本語フォントは「使う文字だけを配信する」方式のため、JavaScript の埋め込みコードを使う。
-  const ADOBE_FONTS_PROJECT_ID = "";
+  const ADOBE_FONTS_PROJECT_ID = "zwp6jxa";
 
   // 欠けている文字の判定に使う、字形が大きく異なる 2 つのシステムフォント (macOS 標準)
   const PROBE_A = '"Hiragino Mincho ProN"';
