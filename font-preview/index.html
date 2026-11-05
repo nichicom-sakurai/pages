@@ -149,20 +149,12 @@
     ...[
       ["mohitsu", "sicyubi-mohitsugyosho", "Sic優美毛筆行書"],
       ["fude", "sicyubi-fudegyosho", "Sic優美筆行書"],
-      ["bansho", "sicyubi-banshogyosho", "Sic優美板書行書"],
       ["hakushu", "ah-hakushu-running-script", "AH白洲毛筆行草体W0"],
-      ["rehitsu", "ta-rehitsu-m", "TA-礼筆M"],
     ].map(([id, family, name]) => ({ id: `gyosho-${id}`, name: "行書体", adobe: [{ family, name, url: `https://fonts.adobe.com/fonts/${family}` }], candidates: [] })),
     { id: "senja", name: "千社文字", adobe: [{ family: "vdl-kyosensya", name: "VDL 京千社", url: "https://fonts.adobe.com/fonts/vdl-kyosensya" }], candidates: ["HakusyuSenja", "白舟千社"] },
     // VDL 京千社に近い Adobe Fonts の書体 (ゴシックの骨格に筆の払い、または千社札らしい太さ)
     ...[
-      ["seiryu", "ab-seiryu-light", "AB-青龍L"],
-      ["kumiki", "ab-kumiki-m", "AB-組木_M"],
-      ["gagaku", "ab-gagaku-b", "AB雅楽B"],
-      ["miyabi", "ta-miyabi", "TA-雅"],
-      ["intore", "ab-intore", "ABイントレ"],
       ["suruga", "ab-suruga-u", "AB-駿河U"],
-      ["yamabiko", "ab-yamabiko-b", "AB-やまびこB"],
     ].map(([id, family, name]) => ({ id: `senja-${id}`, name: "千社文字風", adobe: [{ family, name, url: `https://fonts.adobe.com/fonts/${family}` }], candidates: [] })),
     { id: "edo", name: "江戸文字", adobe: [{ family: "ab-togetsukanteiryu", name: "AB-渡月勘亭流", url: "https://fonts.adobe.com/fonts/ab-togetsukanteiryu" }], candidates: ["HakusyuKanteiryu", "白舟勘亭流"] },
     { id: "yose", name: "寄席文字", adobe: [{ family: "ta-engeifude", name: "TA演芸筆", url: "https://fonts.adobe.com/fonts/ta-engeifude" }], candidates: ["HakusyuYose", "白舟寄席"] },
