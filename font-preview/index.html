@@ -4,9 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>書体プレビュー</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Yuji+Mai&family=Klee+One:wght@600&family=Dela+Gothic+One&family=Yuji+Boku&family=Yuji+Syuku&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #f6f1e7;
@@ -15,6 +12,9 @@
     --line: #d8cfbf;
     --accent: #a8322d;
     --card: #fffdf8;
+    --ok: #1f6b3a;
+    --warn: #8a5a00;
+    --ng: #a8322d;
   }
   * { box-sizing: border-box; }
   body {
@@ -64,10 +64,16 @@
   }
   .card-head h2 { margin: 0; font-size: 16px; }
   .meta { font-size: 12px; color: var(--muted); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-  .badge { font-size: 11px; padding: 2px 8px; border-radius: 999px; border: 1px solid; }
-  .badge.local { color: #1f6b3a; border-color: #1f6b3a; }
-  .badge.sub { color: #8a5a00; border-color: #c08a2a; }
+  .badge { font-size: 11px; padding: 2px 8px; border-radius: 999px; border: 1px solid; white-space: nowrap; }
+  .badge.local { color: var(--ok); border-color: var(--ok); }
+  .badge.adobe { color: #b3000f; border-color: #b3000f; }
   .badge.upload { color: #2346a0; border-color: #2346a0; }
+  .badge.missing { color: var(--ng); border-color: var(--ng); }
+  .font-row {
+    display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+    padding: 8px 16px; border-bottom: 1px solid var(--line); font-size: 12px; color: var(--muted);
+  }
+  .font-row input[type="text"] { font-size: 13px; padding: 5px 8px; min-width: 240px; }
   .upload-btn { font-size: 12px; color: var(--accent); cursor: pointer; text-decoration: underline; }
   .upload-btn input { display: none; }
   .preview {
@@ -82,21 +88,27 @@
     max-height: 80vh;
     white-space: pre;
   }
+  .notice { padding: 16px; font-size: 14px; line-height: 1.7; color: var(--ng); }
+  .notice.warn { color: var(--warn); padding: 8px 16px 0; font-size: 13px; }
+  .card.is-missing .preview { display: none; }
+  .card:not(.is-missing) .notice.missing { display: none; }
   footer { padding: 0 24px 32px; font-size: 12px; color: var(--muted); line-height: 1.7; }
   .btn {
     border: 1px solid var(--line); background: #fff; color: var(--ink);
     padding: 5px 12px; font-size: 13px; border-radius: 6px; cursor: pointer;
   }
-  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
   .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; padding: 8px 16px; font-size: 14px; }
   .btn.primary:hover { opacity: .9; color: #fff; }
 
   @media print {
     @page { margin: 12mm; }
     body { background: #fff; }
-    header, .controls, footer, .meta { display: none !important; }
+    header, .controls, footer, .meta, .font-row, .notice { display: none !important; }
     main { padding: 0; gap: 10mm; }
     .card { border: 0; break-inside: avoid; background: #fff; }
+    .card.is-missing { display: none; }
     .card-head { border: 0; padding: 0 0 2mm; }
     .card-head h2 { font-size: 10pt; color: #666; }
     .preview { overflow: visible; padding: 0; }
@@ -132,76 +144,186 @@
 
 <main id="list"></main>
 
+<datalist id="installedFonts"></datalist>
+
 <footer>
-  各書体はパソコンにインストール済みのフォントを優先して使い、見つからない場合は無料の近似フォント (Google Fonts) で代替表示します。
-  正式な書体で表示したい場合は、各書体の「フォントファイルを読み込む」から .ttf / .otf / .woff ファイルを指定してください (ファイルはブラウザ内でのみ使われ、送信されません)。
+  この Mac にインストールされている正式なフォントだけで表示します。代替フォントは使いません。
+  フォントが見つからない書体は表示せず「未インストール」と表示します。
+  各書体の「使用フォント」にフォント名を入力するか、「フォントファイルを読み込む」でファイルを指定してください。
+  フォント名は英語のフルネームか PostScript 名で入力します (例: YuKyokasho Medium)。日本語名では見つかりません。Mac の「Font Book」でフォントを選び、情報表示で確認できます。
+  入力したフォント名はこのブラウザに保存されます。フォントファイルは送信されず、ブラウザ内でのみ使われます。
 </footer>
 
 <script>
-  // 各書体: ローカルに入っている可能性のある正式フォント → 代替 Google Fonts の順に試す
+  // 正式なフォントの候補。@font-face の local() で照合する。
+  // Chrome は英語のフルネームか PostScript 名でしか照合しない (日本語名は一致しない) ため、英語名を先に書く。
+  // 代替フォントは使わない。候補が 1 つも見つからない書体は「未インストール」として表示しない。
+  // adobe には Adobe Fonts の Web プロジェクトに表示される CSS 用のフォント名 (font-family) を書く。
+  // Adobe Fonts が使える書体は、インストール済みフォントより優先する。
   const STYLES = [
-    {
-      id: "gyosho",
-      name: "行書体",
-      local: ["白舟行書", "HG行書体", "HGP行書体", "HGS行書体", "AR行書体M", "DFP行書体", "FOT-花風行書 Pro"],
-      fallback: "Yuji Mai",
-      weight: 400,
-    },
-    {
-      id: "kyokasho",
-      name: "信教書体 (教科書体)",
-      local: ["HG教科書体", "HGP教科書体", "UD デジタル 教科書体 N-R", "UD Digi Kyokasho N-R", "YuKyokasho", "游教科書体"],
-      fallback: "Klee One",
-      weight: 600,
-    },
-    {
-      id: "senja",
-      name: "千社文字",
-      local: ["白舟千社", "千社文字", "DF千社文字W9", "AR千社文字", "江戸文字千社"],
-      fallback: "Dela Gothic One",
-      weight: 400,
-    },
-    {
-      id: "edo",
-      name: "江戸文字",
-      local: ["白舟勘亭流", "江戸勘亭流", "DF勘亭流", "AR勘亭流H", "HG勘亭流"],
-      fallback: "Yuji Boku",
-      weight: 400,
-    },
-    {
-      id: "yose",
-      name: "寄席文字",
-      local: ["白舟寄席", "寄席文字", "DF寄席文字", "AR寄席文字", "橘流寄席文字"],
-      fallback: "Yuji Syuku",
-      weight: 400,
-    },
+    { id: "gyosho", name: "行書体", adobe: [], candidates: ["HakusyuGyosyo", "HGGyoshotai", "HGPGyoshotai", "白舟行書", "HG行書体"] },
+    { id: "senja", name: "千社文字", adobe: [], candidates: ["HakusyuSenja", "白舟千社"] },
+    { id: "edo", name: "江戸文字", adobe: [], candidates: ["HakusyuKanteiryu", "白舟勘亭流"] },
+    { id: "yose", name: "寄席文字", adobe: [], candidates: ["HakusyuYose", "白舟寄席"] },
   ];
+
+  // Adobe Fonts の Web プロジェクト ID (埋め込みコード https://use.typekit.net/<ID>.js の <ID> 部分)。
+  // 日本語フォントは「使う文字だけを配信する」方式のため、JavaScript の埋め込みコードを使う。
+  const ADOBE_FONTS_PROJECT_ID = "";
+
+  // 欠けている文字の判定に使う、字形が大きく異なる 2 つのシステムフォント (macOS 標準)
+  const PROBE_A = '"Hiragino Mincho ProN"';
+  const PROBE_B = '"Hiragino Sans"';
 
   const $ = (s) => document.querySelector(s);
   const list = $("#list");
-  const uploaded = {}; // id -> family name
+  const quote = (f) => `"${f.replace(/"/g, '\\"')}"`;
+  const storeKey = (id) => `font-preview:${id}`;
 
-  const quote = (f) => `"${f}"`;
+  function loadSaved(id) {
+    try { return localStorage.getItem(storeKey(id)) || ""; } catch { return ""; }
+  }
+  function saveName(id, name) {
+    try { name ? localStorage.setItem(storeKey(id), name) : localStorage.removeItem(storeKey(id)); } catch {}
+  }
 
-  function detectLocal(style) {
-    // document.fonts.check はローカルにないフォントでも true を返す場合があるため、幅比較で判定する
-    const canvas = detectLocal.c || (detectLocal.c = document.createElement("canvas"));
-    const ctx = canvas.getContext("2d");
-    const sample = "山川一家内堀組永";
-    const measure = (fam) => { ctx.font = `48px ${fam}`; return ctx.measureText(sample).width; };
-    const baseSerif = measure("serif");
-    const baseSans = measure("sans-serif");
-    for (const f of style.local) {
-      if (measure(`${quote(f)}, serif`) !== baseSerif || measure(`${quote(f)}, sans-serif`) !== baseSans) {
-        return f;
+  // local() で指定名のフォントを読み込めたら、その書体専用の別名で登録する
+  async function tryLocal(alias, name) {
+    try {
+      const face = new FontFace(alias, `local(${quote(name)})`);
+      await face.load();
+      document.fonts.add(face);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  // Web フォント (Adobe Fonts) として登録済みのフォント名か。字形を実際に読み込めた場合だけ true
+  async function tryWeb(name) {
+    if (!adobeActive) return false;
+    try {
+      const faces = await document.fonts.load(`48px ${quote(name)}`, sampleText());
+      return faces.length > 0;
+    } catch {
+      return false;
+    }
+  }
+
+  async function resolveFont(s) {
+    s.ready = false;
+    const alias = `fp-${s.id}-${Date.now()}`;
+    if (s.upload) {
+      s.alias = s.upload.alias; s.kind = "upload"; s.label = s.upload.file;
+    } else {
+      s.kind = "missing"; s.label = s.custom || "";
+      // 優先順: 入力したフォント名 → Adobe Fonts → インストール済みフォント
+      const tries = [
+        ...(s.custom ? [["web", s.custom], ["local", s.custom]] : []),
+        ...s.adobe.map((n) => ["web", n]),
+        ...s.candidates.map((n) => ["local", n]),
+      ];
+      for (const [type, n] of tries) {
+        if (type === "web" && await tryWeb(n)) {
+          s.alias = n; s.kind = "adobe"; s.label = n;
+          break;
+        }
+        if (type === "local" && await tryLocal(alias, n)) {
+          s.alias = alias; s.kind = "local"; s.label = n;
+          break;
+        }
       }
     }
-    return null;
+    applyFont(s);
+  }
+
+  // Adobe Fonts は DOM 上の文字だけを配信するため、各フォントで現在の文字を画面外に置いて読み込ませる
+  const sampler = document.createElement("div");
+  sampler.setAttribute("aria-hidden", "true");
+  sampler.style.cssText = "position:absolute;left:-9999px;top:0;font-size:16px;white-space:nowrap;";
+  document.body.appendChild(sampler);
+  const sampleText = () => $("#text").value || " ";
+  function updateSampler() {
+    const names = new Set(STYLES.flatMap((s) => [...s.adobe, s.custom].filter(Boolean)));
+    sampler.innerHTML = "";
+    for (const n of names) {
+      const span = document.createElement("span");
+      span.style.fontFamily = quote(n);
+      span.textContent = sampleText();
+      sampler.appendChild(span);
+    }
+  }
+
+  let adobeActive = false;
+  function loadAdobeFonts() {
+    if (!ADOBE_FONTS_PROJECT_ID) return;
+    const script = document.createElement("script");
+    script.src = `https://use.typekit.net/${encodeURIComponent(ADOBE_FONTS_PROJECT_ID)}.js`;
+    script.onload = () => {
+      try {
+        window.Typekit.load({
+          async: true,
+          active: () => { adobeActive = true; STYLES.forEach(resolveFont); },
+          inactive: () => console.warn("Adobe Fonts を読み込めませんでした"),
+        });
+      } catch (e) {
+        console.warn("Adobe Fonts を読み込めませんでした", e);
+      }
+    };
+    document.head.appendChild(script);
+  }
+
+  function applyFont(s) {
+    const badge = s.card.querySelector("[data-badge]");
+    const fontLabel = s.card.querySelector("[data-font]");
+    const preview = s.card.querySelector("[data-preview]");
+    const missingNote = s.card.querySelector(".notice.missing");
+    const texts = { local: "インストール済み", adobe: "Adobe Fonts", upload: "ファイルから読み込み", missing: "未インストール" };
+    badge.className = `badge ${s.kind}`;
+    badge.textContent = texts[s.kind];
+    fontLabel.textContent = s.kind === "missing" ? "" : s.label;
+    s.card.classList.toggle("is-missing", s.kind === "missing");
+    s.card.querySelectorAll("[data-save],[data-print]").forEach((b) => (b.disabled = s.kind === "missing"));
+    if (s.kind === "missing") {
+      const tried = [s.custom, ...s.adobe, ...s.candidates].filter(Boolean).join("、");
+      missingNote.textContent = tried
+        ? `正式なフォントがこの Mac に見つからないため表示できません (確認したフォント名: ${tried})。`
+        : "使用するフォントが未指定です。「使用フォント」にフォント名を入力してください。";
+      preview.style.fontFamily = "";
+    } else {
+      // 代替フォントに落ちないよう、フォールバックは指定しない
+      preview.style.fontFamily = quote(s.alias);
+    }
+    s.ready = s.kind !== "missing";
+    checkGlyphs(s);
+  }
+
+  // 指定フォントに字形がない文字は、ブラウザが勝手に別フォントで描くため検出して警告する
+  function checkGlyphs(s) {
+    const warn = s.card.querySelector(".notice.warn");
+    warn.textContent = "";
+    if (!s.ready) return;
+    const chars = [...new Set([...($("#text").value || "")])].filter((c) => c.trim());
+    const canvas = checkGlyphs.c || (checkGlyphs.c = document.createElement("canvas"));
+    canvas.width = canvas.height = 64;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    const draw = (c, fam) => {
+      ctx.clearRect(0, 0, 64, 64);
+      ctx.font = `48px ${quote(s.alias)}, ${fam}`;
+      ctx.textBaseline = "top";
+      ctx.fillText(c, 4, 4);
+      return ctx.getImageData(0, 0, 64, 64).data.join(",");
+    };
+    const missing = chars.filter((c) => draw(c, PROBE_A) !== draw(c, PROBE_B));
+    if (missing.length) {
+      warn.textContent = `このフォントに含まれていない文字があります: ${missing.join(" ")} (これらは別のフォントで描かれるため正確ではありません)`;
+    }
   }
 
   function render() {
     list.innerHTML = "";
     for (const s of STYLES) {
+      s.custom = loadSaved(s.id);
       const card = document.createElement("section");
       card.className = "card";
       card.innerHTML = `
@@ -210,83 +332,93 @@
           <div class="meta">
             <span class="badge" data-badge></span>
             <span data-font></span>
-            <label class="upload-btn">フォントファイルを読み込む
-              <input type="file" accept=".ttf,.otf,.woff,.woff2">
-            </label>
             <button type="button" class="btn" data-save>画像で保存</button>
             <button type="button" class="btn" data-print>印刷</button>
           </div>
         </div>
+        <div class="font-row">
+          使用フォント
+          <input type="text" list="installedFonts" placeholder="フォント名を入力 (英語名)${s.candidates[0] ? ` 例: ${s.candidates[0]}` : ""}" data-name>
+          <button type="button" class="btn" data-apply>適用</button>
+          <label class="upload-btn">フォントファイルを読み込む
+            <input type="file" accept=".ttf,.otf,.ttc,.woff,.woff2">
+          </label>
+        </div>
+        <div class="notice missing"></div>
+        <div class="notice warn"></div>
         <div class="preview" data-preview></div>`;
+      const nameInput = card.querySelector("[data-name]");
+      nameInput.value = s.custom;
+      const apply = () => {
+        s.custom = nameInput.value.trim();
+        s.upload = null;
+        saveName(s.id, s.custom);
+        updateSampler();
+        resolveFont(s);
+      };
+      card.querySelector("[data-apply]").addEventListener("click", apply);
+      nameInput.addEventListener("keydown", (e) => { if (e.key === "Enter") apply(); });
       card.querySelector("input[type=file]").addEventListener("change", (e) => loadFile(s, e.target.files[0]));
       card.querySelector("[data-save]").addEventListener("click", () => saveImage(s));
       card.querySelector("[data-print]").addEventListener("click", () => printOne(card));
       s.card = card;
       list.appendChild(card);
-      updateFont(s);
+      resolveFont(s);
     }
     update();
   }
 
-  function updateFont(s) {
-    const badge = s.card.querySelector("[data-badge]");
-    const fontLabel = s.card.querySelector("[data-font]");
-    const preview = s.card.querySelector("[data-preview]");
-    let family, kind, label;
-    if (uploaded[s.id]) {
-      family = quote(uploaded[s.id].family);
-      kind = "upload"; label = "読み込み済み";
-      fontLabel.textContent = uploaded[s.id].file;
-    } else {
-      const local = detectLocal(s);
-      if (local) {
-        family = quote(local);
-        kind = "local"; label = "インストール済み";
-        fontLabel.textContent = local;
-      } else {
-        family = quote(s.fallback);
-        kind = "sub"; label = "代替フォント";
-        fontLabel.textContent = s.fallback;
-      }
-    }
-    badge.className = `badge ${kind}`;
-    badge.textContent = label;
-    preview.style.fontFamily = `${family}, serif`;
-    preview.style.fontWeight = kind === "sub" ? s.weight : "normal";
-  }
-
   async function loadFile(s, file) {
     if (!file) return;
-    const family = `upload-${s.id}-${Date.now()}`;
+    const alias = `fp-upload-${s.id}-${Date.now()}`;
     try {
-      const face = new FontFace(family, await file.arrayBuffer());
+      const face = new FontFace(alias, await file.arrayBuffer());
       await face.load();
       document.fonts.add(face);
-      uploaded[s.id] = { family, file: file.name };
-      updateFont(s);
-    } catch (err) {
-      alert(`フォントを読み込めませんでした: ${file.name}`);
+      s.upload = { alias, file: file.name };
+      resolveFont(s);
+    } catch {
+      const warn = s.card.querySelector(".notice.warn");
+      warn.textContent = `フォントファイルを読み込めませんでした: ${file.name}`;
     }
   }
 
   function update() {
+    updateSampler();
     const text = $("#text").value || " ";
     const size = Math.max(8, Number($("#sizeNum").value) || 72);
     for (const s of STYLES) {
       const p = s.card.querySelector("[data-preview]");
       p.textContent = text;
       p.style.fontSize = `${size}px`;
+      checkGlyphs(s);
     }
   }
 
+  // Chrome 系ではインストール済みフォントの一覧を候補として出せる (初回のみ許可を求められる)
+  async function fillInstalledFonts() {
+    if (!("queryLocalFonts" in window)) return;
+    try {
+      const fonts = await window.queryLocalFonts();
+      const dl = $("#installedFonts");
+      const names = [...new Set(fonts.map((f) => f.fullName))].sort((a, b) => a.localeCompare(b, "ja"));
+      dl.innerHTML = names.map((n) => `<option value="${n.replace(/"/g, "&quot;")}"></option>`).join("");
+    } catch {}
+  }
+  document.addEventListener("focusin", (e) => {
+    if (e.target.matches("[data-name]") && !fillInstalledFonts.done) {
+      fillInstalledFonts.done = true;
+      fillInstalledFonts();
+    }
+  });
+
   // 表示中の文字を、そのカードの書体・サイズ・組方向で PNG に描画して保存する
   async function saveImage(s) {
-    const preview = s.card.querySelector("[data-preview]");
+    if (!s.ready) return;
     const text = $("#text").value || " ";
     const size = Math.max(8, Number($("#sizeNum").value) || 72);
     const vertical = list.classList.contains("vertical");
-    const cs = getComputedStyle(preview);
-    const font = `${cs.fontWeight} ${size}px ${cs.fontFamily}`;
+    const font = `${size}px ${quote(s.alias)}`;
     await document.fonts.load(font, text);
 
     const scale = 2; // 高解像度で出力
@@ -352,9 +484,13 @@
     list.classList.toggle("vertical", b.dataset.dir === "v");
   }));
 
+  // Adobe Fonts の字形が後から届いたら、欠けている文字の判定をやり直す
+  document.fonts.addEventListener("loadingdone", () => STYLES.forEach((s) => s.card && checkGlyphs(s)));
+
+  STYLES.forEach((s) => (s.custom = loadSaved(s.id)));
+  updateSampler();
   render();
-  // Web フォント読み込み後に再判定 (ローカル判定は Web フォントの影響を受けない)
-  document.fonts.ready.then(() => STYLES.forEach(updateFont));
+  loadAdobeFonts();
 </script>
 </body>
 </html>
