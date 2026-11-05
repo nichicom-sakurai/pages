@@ -42,7 +42,19 @@ Adobe Fonts の日本語フォントは、ページ上の文字だけを配信�
 | 書体 | Adobe Fonts のフォント | `STYLES[].adobe[].family` |
 | --- | --- | --- |
 | 行書体 | [AB-香蘭行書](https://fonts.adobe.com/fonts/ab-kouran-gyosho) | `ab-kouran-gyosho` |
+| 行書体 (比較用) | [Sic優美毛筆行書](https://fonts.adobe.com/fonts/sicyubi-mohitsugyosho) | `sicyubi-mohitsugyosho` |
+| 行書体 (比較用) | [Sic優美筆行書](https://fonts.adobe.com/fonts/sicyubi-fudegyosho) | `sicyubi-fudegyosho` |
+| 行書体 (比較用) | [Sic優美板書行書](https://fonts.adobe.com/fonts/sicyubi-banshogyosho) | `sicyubi-banshogyosho` |
+| 行書体 (比較用) | [AH白洲毛筆行草体W0](https://fonts.adobe.com/fonts/ah-hakushu-running-script) | `ah-hakushu-running-script` |
+| 行書体 (比較用) | [TA-礼筆M](https://fonts.adobe.com/fonts/ta-rehitsu-m) | `ta-rehitsu-m` |
 | 千社文字 | [VDL 京千社](https://fonts.adobe.com/fonts/vdl-kyosensya) | `vdl-kyosensya` |
+| 千社文字風 | [AB-青龍L](https://fonts.adobe.com/fonts/ab-seiryu-light) | `ab-seiryu-light` |
+| 千社文字風 | [AB-組木_M](https://fonts.adobe.com/fonts/ab-kumiki-m) | `ab-kumiki-m` |
+| 千社文字風 | [AB雅楽B](https://fonts.adobe.com/fonts/ab-gagaku-b) | `ab-gagaku-b` |
+| 千社文字風 | [TA-雅](https://fonts.adobe.com/fonts/ta-miyabi) | `ta-miyabi` |
+| 千社文字風 | [ABイントレ](https://fonts.adobe.com/fonts/ab-intore) | `ab-intore` |
+| 千社文字風 | [AB-駿河U](https://fonts.adobe.com/fonts/ab-suruga-u) | `ab-suruga-u` |
+| 千社文字風 | [AB-やまびこB](https://fonts.adobe.com/fonts/ab-yamabiko-b) | `ab-yamabiko-b` |
 | 江戸文字 | [AB-渡月勘亭流](https://fonts.adobe.com/fonts/ab-togetsukanteiryu) | `ab-togetsukanteiryu` |
 | 寄席文字 | [TA演芸筆](https://fonts.adobe.com/fonts/ta-engeifude) | `ta-engeifude` |
 
