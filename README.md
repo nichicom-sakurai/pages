@@ -45,7 +45,7 @@ Adobe Fonts の日本語フォントは、ページ上の文字だけを配信�
 | 行書体 | [AB-香蘭行書](https://fonts.adobe.com/fonts/ab-kouran-gyosho) | `ab-kouran-gyosho` |
 | 千社文字 | [VDL 京千社](https://fonts.adobe.com/fonts/vdl-kyosensya) | `vdl-kyosensya` |
 | 江戸文字 | [AB-渡月勘亭流](https://fonts.adobe.com/fonts/ab-togetsukanteiryu) | `ab-togetsukanteiryu` |
-| 寄席文字 | なし (別途用意が必要) | - |
+| 寄席文字 | [TA演芸筆](https://fonts.adobe.com/fonts/ta-engeifude) | `ta-engeifude` |
 
 書体を追加するときは、fonts.adobe.com の Web プロジェクトにフォントを追加し、`STYLES[].adobe` に `{ family, name, url }` を追加します。`family` は Web プロジェクトに表示される CSS 用の font-family 名、`name` はカードに表示するフォント名、`url` はフォントの紹介ページ (fonts.adobe.com のフォントのページ) です。カードではフォント名が紹介ページへのリンクになります。
 
