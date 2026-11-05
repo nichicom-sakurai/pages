@@ -76,6 +76,7 @@
   .font-row input[type="text"] { font-size: 13px; padding: 5px 8px; min-width: 240px; }
   .upload-btn { font-size: 12px; color: var(--accent); cursor: pointer; text-decoration: underline; }
   .upload-btn input { display: none; }
+  .meta a { color: var(--accent); }
   .preview {
     padding: 20px 16px;
     line-height: 1.3;
@@ -158,12 +159,13 @@
   // 正式なフォントの候補。@font-face の local() で照合する。
   // Chrome は英語のフルネームか PostScript 名でしか照合しない (日本語名は一致しない) ため、英語名を先に書く。
   // 代替フォントは使わない。候補が 1 つも見つからない書体は「未インストール」として表示しない。
-  // adobe には Adobe Fonts の Web プロジェクトに表示される CSS 用のフォント名 (font-family) を書く。
+  // adobe には Adobe Fonts のフォントを書く。family は Web プロジェクトに表示される CSS 用のフォント名 (font-family)、
+  // name は画面に表示するフォント名、url はそのフォントの紹介ページ。
   // Adobe Fonts が使える書体は、インストール済みフォントより優先する。
   const STYLES = [
-    { id: "gyosho", name: "行書体", adobe: ["ab-kouran-gyosho"], candidates: ["HakusyuGyosyo", "HGGyoshotai", "HGPGyoshotai", "白舟行書", "HG行書体"] },
-    { id: "senja", name: "千社文字", adobe: ["vdl-kyosensya"], candidates: ["HakusyuSenja", "白舟千社"] },
-    { id: "edo", name: "江戸文字", adobe: ["ab-togetsukanteiryu"], candidates: ["HakusyuKanteiryu", "白舟勘亭流"] },
+    { id: "gyosho", name: "行書体", adobe: [{ family: "ab-kouran-gyosho", name: "AB-香蘭行書", url: "https://fonts.adobe.com/fonts/ab-kouran-gyosho" }], candidates: ["HakusyuGyosyo", "HGGyoshotai", "HGPGyoshotai", "白舟行書", "HG行書体"] },
+    { id: "senja", name: "千社文字", adobe: [{ family: "vdl-kyosensya", name: "VDL 京千社", url: "https://fonts.adobe.com/fonts/vdl-kyosensya" }], candidates: ["HakusyuSenja", "白舟千社"] },
+    { id: "edo", name: "江戸文字", adobe: [{ family: "ab-togetsukanteiryu", name: "AB-渡月勘亭流", url: "https://fonts.adobe.com/fonts/ab-togetsukanteiryu" }], candidates: ["HakusyuKanteiryu", "白舟勘亭流"] },
     { id: "yose", name: "寄席文字", adobe: [], candidates: ["HakusyuYose", "白舟寄席"] },
   ];
 
@@ -212,6 +214,7 @@
 
   async function resolveFont(s) {
     s.ready = false;
+    s.url = "";
     const alias = `fp-${s.id}-${Date.now()}`;
     if (s.upload) {
       s.alias = s.upload.alias; s.kind = "upload"; s.label = s.upload.file;
@@ -220,12 +223,12 @@
       // 優先順: 入力したフォント名 → Adobe Fonts → インストール済みフォント
       const tries = [
         ...(s.custom ? [["web", s.custom], ["local", s.custom]] : []),
-        ...s.adobe.map((n) => ["web", n]),
+        ...s.adobe.map((f) => ["web", f.family, f]),
         ...s.candidates.map((n) => ["local", n]),
       ];
-      for (const [type, n] of tries) {
+      for (const [type, n, info] of tries) {
         if (type === "web" && await tryWeb(n)) {
-          s.alias = n; s.kind = "adobe"; s.label = n;
+          s.alias = n; s.kind = "adobe"; s.label = info ? info.name : n; s.url = info ? info.url : "";
           break;
         }
         if (type === "local" && await tryLocal(alias, n)) {
@@ -244,7 +247,7 @@
   document.body.appendChild(sampler);
   const sampleText = () => $("#text").value || " ";
   function updateSampler() {
-    const names = new Set(STYLES.flatMap((s) => [...s.adobe, s.custom].filter(Boolean)));
+    const names = new Set(STYLES.flatMap((s) => [...s.adobe.map((f) => f.family), s.custom].filter(Boolean)));
     sampler.innerHTML = "";
     for (const n of names) {
       const span = document.createElement("span");
@@ -281,11 +284,21 @@
     const texts = { local: "インストール済み", adobe: "Adobe Fonts", upload: "ファイルから読み込み", missing: "未インストール" };
     badge.className = `badge ${s.kind}`;
     badge.textContent = texts[s.kind];
-    fontLabel.textContent = s.kind === "missing" ? "" : s.label;
+    fontLabel.textContent = "";
+    if (s.kind !== "missing" && s.url) {
+      const a = document.createElement("a");
+      a.href = s.url;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      a.textContent = s.label;
+      fontLabel.appendChild(a);
+    } else if (s.kind !== "missing") {
+      fontLabel.textContent = s.label;
+    }
     s.card.classList.toggle("is-missing", s.kind === "missing");
     s.card.querySelectorAll("[data-save],[data-print]").forEach((b) => (b.disabled = s.kind === "missing"));
     if (s.kind === "missing") {
-      const tried = [s.custom, ...s.adobe, ...s.candidates].filter(Boolean).join("、");
+      const tried = [s.custom, ...s.adobe.map((f) => f.name), ...s.candidates].filter(Boolean).join("、");
       missingNote.textContent = tried
         ? `正式なフォントがこの Mac に見つからないため表示できません (確認したフォント名: ${tried})。`
         : "使用するフォントが未指定です。「使用フォント」にフォント名を入力してください。";
